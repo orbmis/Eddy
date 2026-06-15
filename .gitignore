@@ -12,6 +12,7 @@ cache/
 artifacts/
 broadcast/
 typechain-types/
+out/
 
 # build output
 dist/

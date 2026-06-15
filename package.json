@@ -9,9 +9,11 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "build:contracts": "forge build",
     "test:fork": "vitest run test/fork",
     "verify:m0": "bash scripts/verify-m0.sh",
-    "verify:m1": "bash scripts/verify-m1.sh"
+    "verify:m1": "bash scripts/verify-m1.sh",
+    "verify:m2": "bash scripts/verify-m2.sh"
   },
   "devDependencies": {
     "@cowprotocol/cow-sdk": "^9.1.5",

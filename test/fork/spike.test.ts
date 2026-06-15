@@ -174,7 +174,16 @@ beforeAll(async () => {
   }
   anvil = spawn(
     "anvil",
-    ["--fork-url", BASE_RPC_URL, "--fork-block-number", String(FORK_BLOCK), "--port", String(PORT), "--silent"],
+    [
+      "--fork-url", BASE_RPC_URL,
+      "--fork-block-number", String(FORK_BLOCK),
+      "--port", String(PORT),
+      // Resilience to transient RPC throttling when forks spin up back-to-back.
+      "--retries", "10",
+      "--timeout", "60000",
+      "--no-rate-limit",
+      "--silent",
+    ],
     { stdio: "ignore" },
   );
   anvil.on("error", (e) => {

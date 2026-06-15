@@ -75,7 +75,36 @@ export const SAFE_ABI = [
     ],
     outputs: [{ name: "success", type: "bool" }],
   },
+  {
+    type: "function",
+    name: "enableModule",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "module", type: "address" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "isModuleEnabled",
+    stateMutability: "view",
+    inputs: [{ name: "module", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  // ERC-1271 — served by the ExtensibleFallbackHandler, which delegates to the
+  // registered domain verifier (ComposableCoW). Returns the 0x1626ba7e magic.
+  {
+    type: "function",
+    name: "isValidSignature",
+    stateMutability: "view",
+    inputs: [
+      { name: "_hash", type: "bytes32" },
+      { name: "_signature", type: "bytes" },
+    ],
+    outputs: [{ name: "", type: "bytes4" }],
+  },
 ] as const;
+
+/** EIP-1271 "valid signature" magic value for isValidSignature(bytes32,bytes). */
+export const ERC1271_MAGIC = "0x1626ba7e" as const;
 
 export const EXTENSIBLE_FALLBACK_HANDLER_ABI = [
   {

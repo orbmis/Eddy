@@ -12,5 +12,9 @@ export default defineConfig({
     testTimeout: 120_000,
     hookTimeout: 120_000,
     fileParallelism: false,
+    // Fork tests hit a live Base RPC; absorb transient transport flakiness.
+    // The on-chain operations are deterministic, so a genuine failure still
+    // fails all attempts (tests use a fresh Safe/order salt per attempt).
+    retry: 2,
   },
 });

@@ -90,21 +90,29 @@ Session key to *act*; caveat enforcers to *constrain*. Model B further reduces s
 - **Network:** Base or Arbitrum (cheap; TWAP part minimum ~$5 vs $1k mainnet; frequent small parts viable).
 - **Wallet libs:** viem + wagmi. **Deploy:** Vercel / Cloudflare Pages.
 
-### Pre-hook (illustrative — verify against live SDK/docs)
+### Pre-hook — corrected wiring (M2 finding)
+
+**The naive `target = AAVE_POOL, withdraw(USDC, partSellAmount, SAFE)` pre-hook does NOT execute.** CoW hooks run via the **HooksTrampoline**, which is `msg.sender` at settlement; `AavePool.withdraw` burns *`msg.sender`'s* aTokens, and the trampoline holds none. We must not approve the trampoline (or any arbitrary puller) over the Safe's aUSDC — that would violate the yield-leg withdraw-only rule. So the hook cannot call Aave directly.
+
+**Resolution (implemented in M2): a constrained withdraw-only Safe module.** `contracts/AaveWithdrawModule.sol` is enabled on the Safe; its `withdrawPart(amount)` runs `execTransactionFromModule → AavePool.withdraw(USDC, amount, Safe)` **as the Safe**, so the Safe's own aUSDC burns and USDC lands in the Safe. The module only ever touches USDC and only ever pays the Safe, so it is safe to leave callable by anyone (the untrusted trampoline). The pre-hook therefore targets the module:
+
 ```ts
-// Per-part pre-hook: withdraw exactly one part's USDC from Aave before settlement.
-// Parts are equal size, so amount is fixed. The hook call is sent to the Safe,
-// which executes the Aave withdraw; ensure approvals + fallback handler are set.
+// Per-part pre-hook: trigger the Safe's withdraw-only module to pull exactly
+// one part's USDC from Aave into the Safe before settlement. Equal parts → fixed
+// amount. The module executes the Aave withdraw AS the Safe (execTransactionFromModule).
 const preHook = {
-  target: AAVE_POOL,
+  target: AAVE_WITHDRAW_MODULE,
   callData: encodeFunctionData({
-    abi: aavePoolAbi,
-    functionName: 'withdraw',
-    args: [USDC, partSellAmount, SAFE_ADDRESS], // asset, amount, to
+    abi: aaveWithdrawModuleAbi,
+    functionName: 'withdrawPart',
+    args: [partSellAmount],
   }),
-  gasLimit: '...',
+  gasLimit: '200000',
 };
-// Attach via order appData; spike confirms it fires on each TWAP part.
+// Attach via order appData (amount == partSellAmount). M0 proved per-part
+// propagation; M2 proves the encoded hook executes on a fork; M6 confirms a live
+// solver fires it. Alternative considered: cow-shed (user-owned proxy) — rejected
+// for v1 because it moves the aToken position out of the Safe.
 ```
 
 ---
