@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# secrets / local env
+.env
+.env.*.local
+.env.swp
+*.swp
+
+# anvil / foundry fork artifacts
+cache/
+artifacts/
+broadcast/
+typechain-types/
+
+# build output
+dist/
+.next/
+*.tsbuildinfo
+
+# os
+.DS_Store

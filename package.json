@@ -1,0 +1,23 @@
+{
+  "name": "eddy",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:fork": "vitest run test/fork",
+    "verify:m0": "bash scripts/verify-m0.sh"
+  },
+  "devDependencies": {
+    "@cowprotocol/cow-sdk": "^9.1.5",
+    "@types/node": "^20.17.0",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.7.3",
+    "viem": "^2.22.0",
+    "vitest": "^2.1.8"
+  }
+}
