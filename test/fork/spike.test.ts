@@ -45,7 +45,9 @@ import { MetadataApi, stringifyDeterministic } from "@cowprotocol/cow-sdk";
 import { BASE_ADDRESSES } from "../../src/config/addresses.js";
 
 // --- fork config ----------------------------------------------------------
-const PORT = Number(process.env.ANVIL_PORT ?? 8645);
+// Process-unique port so back-to-back / overlapping fork runs never collide on
+// a stale anvil.
+const PORT = Number(process.env.ANVIL_PORT ?? 8645 + (process.pid % 2000));
 const RPC = `http://127.0.0.1:${PORT}`;
 const BASE_RPC_URL = process.env.BASE_RPC_URL;
 // Pin a fixed Base block so the spike is fully reproducible: the fork

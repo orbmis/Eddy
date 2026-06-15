@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test:fork": "vitest run test/fork",
-    "verify:m0": "bash scripts/verify-m0.sh"
+    "verify:m0": "bash scripts/verify-m0.sh",
+    "verify:m1": "bash scripts/verify-m1.sh"
   },
   "devDependencies": {
     "@cowprotocol/cow-sdk": "^9.1.5",
