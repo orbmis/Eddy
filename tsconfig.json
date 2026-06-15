@@ -13,5 +13,5 @@
     "types": ["node", "vitest/globals"],
     "noEmit": true
   },
-  "include": ["src", "test", "vitest.config.ts"]
+  "include": ["src", "test/unit", "test/fork", "vitest.config.ts"]
 }

@@ -8,20 +8,36 @@
     "node": ">=20.18.0"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "dev": "next dev",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.app.json",
     "build:contracts": "forge build",
     "test": "vitest run test/unit",
     "test:fork": "vitest run test/fork",
+    "test:component": "vitest run test/component",
     "verify:m0": "bash scripts/verify-m0.sh",
     "verify:m1": "bash scripts/verify-m1.sh",
     "verify:m2": "bash scripts/verify-m2.sh",
     "verify:m3": "bash scripts/verify-m3.sh",
-    "verify:m4": "bash scripts/verify-m4.sh"
+    "verify:m4": "bash scripts/verify-m4.sh",
+    "verify:m5": "bash scripts/verify-m5.sh",
+    "verify:all": "bash scripts/verify-all.sh"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@cowprotocol/cow-sdk": "^9.1.5",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^20.17.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "4.3.4",
     "dotenv": "^16.4.7",
+    "jsdom": "^26.0.0",
     "typescript": "^5.7.3",
     "viem": "^2.22.0",
     "vitest": "^2.1.8"
