@@ -83,3 +83,8 @@ export function minLimitForAmount(sellAmount: bigint): bigint {
 export function minPartLimit(leg: BasketLeg): bigint {
   return minLimitForAmount(partSellAmount(leg));
 }
+
+/** A leg's per-part sell amount for an arbitrary epoch budget (used by the agent loop's compounding tranches). */
+export function partSellAmountForBudget(leg: BasketLeg, epochBudget: bigint): bigint {
+  return ((epochBudget * BigInt(leg.weightBps)) / 10000n) / basket.parts;
+}

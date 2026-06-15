@@ -22,7 +22,7 @@ import {
 } from "viem";
 import { MetadataApi, stringifyDeterministic } from "@cowprotocol/cow-sdk";
 import { BASE_ADDRESSES, BASE_CHAIN_ID } from "../config/addresses.js";
-import { basket, minPartLimit, partSellAmount, type BasketLeg } from "../config/basket.js";
+import { basket, minLimitForAmount, partSellAmount, partSellAmountForBudget, type BasketLeg } from "../config/basket.js";
 import { assertValidOrder } from "../envelope/validate.js";
 import { AAVE_WITHDRAW_MODULE_ABI } from "../safe/module.js";
 import type { EddyPublicClient } from "../safe/safe.js";
@@ -308,9 +308,14 @@ export async function buildLegOrder(args: {
   now: bigint;
   salt: Hex;
   appCode?: string;
+  /** Override the leg's epoch budget (agent loop compounding tranches). Defaults to the static basket budget. */
+  epochBudgetOverride?: bigint;
 }): Promise<BuiltLegOrder> {
-  const psa = partSellAmount(args.leg);
-  const mpl = minPartLimit(args.leg);
+  const psa =
+    args.epochBudgetOverride === undefined
+      ? partSellAmount(args.leg)
+      : partSellAmountForBudget(args.leg, args.epochBudgetOverride);
+  const mpl = minLimitForAmount(psa);
   const econ = {
     sellToken: BASE_ADDRESSES.usdc,
     buyToken: args.leg.token,
