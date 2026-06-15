@@ -22,6 +22,8 @@ import {
 } from "viem";
 import { MetadataApi, stringifyDeterministic } from "@cowprotocol/cow-sdk";
 import { BASE_ADDRESSES, BASE_CHAIN_ID } from "../config/addresses.js";
+import { basket, minPartLimit, partSellAmount, type BasketLeg } from "../config/basket.js";
+import { assertValidOrder } from "../envelope/validate.js";
 import { AAVE_WITHDRAW_MODULE_ABI } from "../safe/module.js";
 import type { EddyPublicClient } from "../safe/safe.js";
 
@@ -90,6 +92,30 @@ export const COMPOSABLE_COW_ABI = [
       { name: "proof", type: "bytes32[]" },
     ],
     outputs: [gpv2OrderTuple, { name: "signature", type: "bytes" }],
+  },
+  {
+    type: "function",
+    name: "remove",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "singleOrderHash", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "hash",
+    stateMutability: "pure",
+    inputs: [conditionalOrderParamsTuple],
+    outputs: [{ name: "", type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "singleOrders",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "hash", type: "bytes32" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
   },
 ] as const;
 
@@ -258,4 +284,84 @@ export async function getTradeableOrderWithSignature(
     args: [args.owner, args.params, "0x", []],
   })) as unknown as [Gpv2Order, Hex];
   return { order, signature };
+}
+
+// --- construction guard (envelope-enforced) -------------------------------
+export interface BuiltLegOrder {
+  params: ConditionalOrderParams;
+  twapParams: TwapParams;
+  appData: Hex;
+  preHook: PreHook;
+  partSellAmount: bigint;
+}
+
+/**
+ * Build a leg's TWAP conditional order, ENFORCING the envelope first. Throws
+ * EnvelopeError (from assertValidOrder) before constructing anything if the
+ * order would breach the allowlist / cap / slippage / expiry bounds.
+ */
+export async function buildLegOrder(args: {
+  leg: BasketLeg;
+  safe: Address;
+  module: Address;
+  t0: bigint;
+  now: bigint;
+  salt: Hex;
+  appCode?: string;
+}): Promise<BuiltLegOrder> {
+  const psa = partSellAmount(args.leg);
+  const mpl = minPartLimit(args.leg);
+  const econ = {
+    sellToken: BASE_ADDRESSES.usdc,
+    buyToken: args.leg.token,
+    partSellAmount: psa,
+    minPartLimit: mpl,
+    t0: args.t0,
+    n: basket.parts,
+    t: basket.intervalSeconds,
+    span: basket.span,
+  };
+  assertValidOrder(econ, { now: args.now });
+
+  const { appData, preHook } = await buildPreHookAppData({ module: args.module, partSellAmount: psa, appCode: args.appCode });
+  const twapParams: TwapParams = {
+    sellToken: BASE_ADDRESSES.usdc,
+    buyToken: args.leg.token,
+    receiver: args.safe,
+    partSellAmount: psa,
+    minPartLimit: mpl,
+    t0: args.t0,
+    n: basket.parts,
+    t: basket.intervalSeconds,
+    span: basket.span,
+    appData,
+  };
+  const params = conditionalOrderParams(encodeTwapStaticInput(twapParams), args.salt);
+  return { params, twapParams, appData, preHook, partSellAmount: psa };
+}
+
+// --- kill switch ----------------------------------------------------------
+/** The on-chain ComposableCoW order hash for `params` (keccak256(abi.encode(params))). */
+export function conditionalOrderHash(publicClient: EddyPublicClient, params: ConditionalOrderParams): Promise<Hex> {
+  return publicClient.readContract({
+    address: BASE_ADDRESSES.composableCow,
+    abi: COMPOSABLE_COW_ABI,
+    functionName: "hash",
+    args: [params],
+  });
+}
+
+/** Calldata for ComposableCoW.remove(hash) — execute as the Safe to cancel the order. */
+export function killOrderCalldata(orderHash: Hex): Hex {
+  return encodeFunctionData({ abi: COMPOSABLE_COW_ABI, functionName: "remove", args: [orderHash] });
+}
+
+/** Whether the conditional order is still authed (active) for `owner`. */
+export function isSingleOrderActive(publicClient: EddyPublicClient, owner: Address, orderHash: Hex): Promise<boolean> {
+  return publicClient.readContract({
+    address: BASE_ADDRESSES.composableCow,
+    abi: COMPOSABLE_COW_ABI,
+    functionName: "singleOrders",
+    args: [owner, orderHash],
+  });
 }

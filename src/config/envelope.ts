@@ -52,6 +52,8 @@ export const envelope = {
   buffer: toUsdc(usdcBuffer),
   /** Max slippage in basis points → per-part TWAP limit price (M2/M3). */
   maxSlippageBps: envNumber("MAX_SLIPPAGE_BPS", 200),
+  /** Max order lifetime (seconds): expiry = t0 + n·t must be ≤ now + this. Default 7d. */
+  maxOrderTtlSeconds: BigInt(envNumber("MAX_ORDER_TTL_SECONDS", 604800)),
   /** Allowlisted buy tokens (basket only). Defaults to WETH. */
   allowedBuyTokens: envList("ALLOWED_BUY_TOKENS", [BASE_ADDRESSES.weth]),
   /** DRY_RUN: true = simulate/sign only, never broadcast real value. Defaults true. */

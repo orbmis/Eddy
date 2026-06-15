@@ -10,10 +10,12 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build:contracts": "forge build",
+    "test": "vitest run test/unit",
     "test:fork": "vitest run test/fork",
     "verify:m0": "bash scripts/verify-m0.sh",
     "verify:m1": "bash scripts/verify-m1.sh",
-    "verify:m2": "bash scripts/verify-m2.sh"
+    "verify:m2": "bash scripts/verify-m2.sh",
+    "verify:m3": "bash scripts/verify-m3.sh"
   },
   "devDependencies": {
     "@cowprotocol/cow-sdk": "^9.1.5",

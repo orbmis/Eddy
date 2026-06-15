@@ -79,6 +79,8 @@ Bound each leg independently so a buggy or compromised agent can't exceed the ma
 
 Session key to *act*; caveat enforcers to *constrain*. Model B further reduces standing privilege because the withdrawal is a pre-authorised in-settlement hook, not a live agent capability.
 
+**M3 status of these bounds.** Swap-leg allowlist / per-epoch spend cap / slippage (via the per-part limit price) / expiry are enforced at **construction** by `src/envelope/validate.ts` (`assertValidOrder`, wired into `buildLegOrder`) and proven by the rejection tests in `test/unit/envelope.test.ts`. The yield leg's `AaveWithdrawModule` enforces a **per-call** withdrawal cap (`maxWithdrawPerCall` = one part); full **per-epoch on-chain** withdrawal accounting is deferred (the per-epoch *spend* is already bounded at construction). **Kill** in v1 = cancel the conditional order in one tx (`ComposableCoW.remove` as the Safe); there is no session key to revoke (threshold-1 Safe, EOA owner) — that line applies only to a future module/session-key agent.
+
 ---
 
 ## Stack

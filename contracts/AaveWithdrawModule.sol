@@ -29,17 +29,24 @@ contract AaveWithdrawModule {
     address public immutable safe;
     address public immutable pool;
     address public immutable asset;
+    /// @notice Per-call withdrawal cap (yield-leg envelope bound). A single
+    ///         withdrawPart call may not pull more than this — bounds what any
+    ///         (untrusted) caller can move per call. Set to one part's amount.
+    uint256 public immutable maxWithdrawPerCall;
 
     error WithdrawFailed();
+    error AmountExceedsCap();
 
-    constructor(address _safe, address _pool, address _asset) {
+    constructor(address _safe, address _pool, address _asset, uint256 _maxWithdrawPerCall) {
         safe = _safe;
         pool = _pool;
         asset = _asset;
+        maxWithdrawPerCall = _maxWithdrawPerCall;
     }
 
     /// @notice Withdraw exactly `amount` of `asset` from Aave into the Safe.
     function withdrawPart(uint256 amount) external {
+        if (amount > maxWithdrawPerCall) revert AmountExceedsCap();
         bytes memory data = abi.encodeWithSelector(IAavePool.withdraw.selector, asset, amount, safe);
         bool ok = ISafe(safe).execTransactionFromModule(pool, 0, data, 0);
         if (!ok) revert WithdrawFailed();

@@ -66,14 +66,20 @@ export function partSellAmount(leg: BasketLeg): bigint {
 }
 
 /**
- * A leg's per-part minimum buy amount (buy-token base units), derived from the
- * static reference price minus the slippage bound. M2 uses a static price; M3
- * replaces this with a live quote. Assumes an 18-decimal buy token (WETH).
+ * Minimum acceptable buy amount (WETH wei) for a given USDC sell amount, at the
+ * slippage bound: expectedOut · (1 − maxSlippageBps/1e4). A part whose
+ * minPartLimit is below this implies worse-than-allowed slippage. M2/M3 use a
+ * static reference price; M-future replaces it with a live quote. Assumes an
+ * 18-decimal buy token (WETH).
  */
-export function minPartLimit(leg: BasketLeg): bigint {
-  const sell = partSellAmount(leg); // USDC, 6 decimals
+export function minLimitForAmount(sellAmount: bigint): bigint {
   // expected buy = sell / price, rescaled from USDC(6) to WETH(18)
   const expected =
-    (sell * 10n ** BigInt(WETH_DECIMALS)) / (basket.referencePriceUsdcPerWeth * 10n ** BigInt(USDC_DECIMALS));
+    (sellAmount * 10n ** BigInt(WETH_DECIMALS)) / (basket.referencePriceUsdcPerWeth * 10n ** BigInt(USDC_DECIMALS));
   return (expected * BigInt(10000 - envelope.maxSlippageBps)) / 10000n;
+}
+
+/** A leg's per-part minimum buy amount (buy-token base units). */
+export function minPartLimit(leg: BasketLeg): bigint {
+  return minLimitForAmount(partSellAmount(leg));
 }

@@ -22,20 +22,29 @@ export const AAVE_WITHDRAW_MODULE_ABI = [
   { type: "function", name: "safe", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "pool", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "asset", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  { type: "function", name: "maxWithdrawPerCall", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
 ] as const;
 
 /** Deploy AaveWithdrawModule(safe, pool, asset) from its compiled creation bytecode. */
 export async function deployModule(
   publicClient: EddyPublicClient,
   walletClient: EddyWalletClient,
-  params: { deployer: Account; bytecode: Hex; abi: Abi; safe: Address; pool: Address; asset: Address },
+  params: {
+    deployer: Account;
+    bytecode: Hex;
+    abi: Abi;
+    safe: Address;
+    pool: Address;
+    asset: Address;
+    maxWithdrawPerCall: bigint;
+  },
 ): Promise<Address> {
   const hash = await walletClient.deployContract({
     account: params.deployer,
     chain: walletClient.chain,
     abi: params.abi,
     bytecode: params.bytecode,
-    args: [params.safe, params.pool, params.asset],
+    args: [params.safe, params.pool, params.asset, params.maxWithdrawPerCall],
   });
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (!receipt.contractAddress) throw new Error("module deploy produced no address");

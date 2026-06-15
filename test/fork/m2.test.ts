@@ -80,6 +80,8 @@ describe("M2 basket TWAP construction + signing", () => {
     const { safe } = await setupFundedSafe(clients);
 
     // 1. Deploy + enable the withdraw-only module.
+    const leg = basket.legs[0]!;
+    const psa = partSellAmount(leg);
     const { bytecode, abi } = loadModuleArtifact();
     const module = await deployModule(publicClient, walletClient, {
       deployer: owner,
@@ -88,6 +90,7 @@ describe("M2 basket TWAP construction + signing", () => {
       safe,
       pool: aavePool,
       asset: usdc,
+      maxWithdrawPerCall: psa,
     });
     await enableModule(publicClient, walletClient, { safe, owner, module });
     const moduleEnabled = await isModuleEnabled(publicClient, safe, module);
@@ -105,9 +108,7 @@ describe("M2 basket TWAP construction + signing", () => {
     assertWeightsSum100();
     const weightsSum = weightsSumBps();
     const weightsSum100 = weightsSum === 10000;
-    const leg = basket.legs[0]!;
     const lb = legBudget(leg);
-    const psa = partSellAmount(leg);
     const mpl = minPartLimit(leg);
     const partMatchesBudget = psa === lb / basket.parts;
     expect(partMatchesBudget, "partSellAmount must equal legBudget / parts").toBe(true);
