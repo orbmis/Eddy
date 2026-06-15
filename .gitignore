@@ -17,6 +17,7 @@ out/
 # build output
 dist/
 .next/
+next-env.d.ts
 *.tsbuildinfo
 
 # os
